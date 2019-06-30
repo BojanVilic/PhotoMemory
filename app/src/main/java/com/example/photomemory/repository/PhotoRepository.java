@@ -1,19 +1,25 @@
 package com.example.photomemory.repository;
 
+import android.app.Application;
+
 import androidx.lifecycle.LiveData;
 
 import com.example.photomemory.data.Photo;
 import com.example.photomemory.data.PhotoDao;
+import com.example.photomemory.data.PhotoDatabase;
 
 import java.util.List;
 
 public class PhotoRepository {
 
     private static PhotoRepository instance;
-    private final PhotoDao photoDao;
+    private PhotoDao photoDao;
+    private LiveData<List<Photo>> allPhotos;
 
-    public PhotoRepository(PhotoDao photoDao){
-        this.photoDao = photoDao;
+    public PhotoRepository (Application application){
+        PhotoDatabase photoDatabase = PhotoDatabase.getInstance(application);
+        photoDao = photoDatabase.photoDao();
+        allPhotos = photoDao.getPhotos();
     }
 
     public LiveData<List<Photo>> getListOfPhotos(){
