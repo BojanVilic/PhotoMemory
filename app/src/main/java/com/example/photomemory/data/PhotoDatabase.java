@@ -9,7 +9,7 @@ import androidx.room.Room;
 import androidx.room.RoomDatabase;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 
-@Database(entities = {Photo.class}, version = 1)
+@Database(entities = {Photo.class}, version = 2)
 public abstract class PhotoDatabase extends RoomDatabase {
 
     private static PhotoDatabase instance;
@@ -20,34 +20,19 @@ public abstract class PhotoDatabase extends RoomDatabase {
         if(instance == null) {
             instance = Room.databaseBuilder(context.getApplicationContext(), PhotoDatabase.class, "note_database")
                     .fallbackToDestructiveMigration()
-                    .addCallback(roomCallback)
+                    .addCallback(new Callback() {
+                        @Override
+                        public void onCreate(@NonNull SupportSQLiteDatabase db) {
+                            super.onCreate(db);
+                        }
+
+                        @Override
+                        public void onOpen(@NonNull SupportSQLiteDatabase db) {
+                            super.onOpen(db);
+                        }
+                    })
                     .build();
         }
         return  instance;
-    }
-
-    private static RoomDatabase.Callback roomCallback = new RoomDatabase.Callback() {
-        @Override
-        public void onCreate(@NonNull SupportSQLiteDatabase db) {
-            super.onCreate(db);
-            new PopulateDbAsyncTask(instance).execute();
-        }
-    };
-
-    private static class PopulateDbAsyncTask extends AsyncTask<Void, Void, Void> {
-
-        private PhotoDao photoDao;
-
-        private PopulateDbAsyncTask(PhotoDatabase db){
-            photoDao = db.photoDao();
-        }
-
-        @Override
-        protected Void doInBackground(Void... voids) {
-            photoDao.createPhoto(new Photo(1, "Canada", "Toronto"));
-            photoDao.createPhoto(new Photo(2, "Brazil", "Rio de Janeiro"));
-            photoDao.createPhoto(new Photo(3, "Spain", "Madrid"));
-            return null;
-        }
     }
 }

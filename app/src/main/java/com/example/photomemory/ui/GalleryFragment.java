@@ -59,13 +59,6 @@ public class GalleryFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_gallery, container, false);
 
         mCreateButton = view.findViewById(R.id.buttonCreate);
-        mCreateButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Photo photo = new Photo(0, "Canada", "Toronto");
-                photoViewModel.createPhoto(photo);
-            }
-        });
         return view;
     }
 }
