@@ -13,6 +13,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -21,61 +22,88 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
 
 import com.example.photomemory.R;
 import com.example.photomemory.adapters.ViewPagerAdapter;
 import com.example.photomemory.data.Photo;
-import com.example.photomemory.viewmodels.PhotoViewModel;
+import com.example.photomemory.viewmodels.MainViewModel;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
     private Uri mUri;
-    private static final int CAMERA_IMAGE_RESULT = 202;
-    private static final int LOCATION_REQUEST = 201;
+    private static final int CAMERA_IMAGE_RESULT = 3;
     private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.photomemory";
     private ViewPager viewPager;
-    private PhotoViewModel photoViewModel;
+    private MainViewModel mainViewModel;
     private String country;
     private String city;
     private String timeStamp;
     private double lat;
     private double lng;
+    public static final int MULTIPLE_PERMISSIONS = 1;
+    public static final int LOCATION_PERMISSION = 2;
+    String[] permissions = new String[]{
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.CAMERA,
+            Manifest.permission.ACCESS_FINE_LOCATION};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        photoViewModel = ViewModelProviders.of(this).get(PhotoViewModel.class);
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
 
-        viewPager = (ViewPager) findViewById(R.id.view_pager);
+        viewPager = findViewById(R.id.view_pager);
         viewPager.setAdapter(new ViewPagerAdapter(getSupportFragmentManager()));
 
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
-
     }
 
-    private void userLocationInfo(){
-        if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_REQUEST);
+    private void userLocationInfo() {
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION);
         } else {
             LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-            Location location = lm.getLastKnownLocation(LocationManager.GPS_PROVIDER);
 
-            lat = location.getLatitude();
-            lng = location.getLongitude();
+            if (lm != null) {
+                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
+                    @Override
+                    public void onLocationChanged(Location location) {
+                        lat = location.getLatitude();
+                        lng = location.getLongitude();
 
-            country = photoViewModel.getCountry(lat, lng);
-            city = photoViewModel.getCity(lat, lng);
+                        country = mainViewModel.getCountry(lat, lng);
+                        city = mainViewModel.getCity(lat, lng);
+                    }
 
+                    @Override
+                    public void onStatusChanged(String s, int i, Bundle bundle) {
+
+                    }
+
+                    @Override
+                    public void onProviderEnabled(String s) {
+
+                    }
+
+                    @Override
+                    public void onProviderDisabled(String s) {
+
+                    }
+                });
+            }
         }
     }
 
@@ -86,16 +114,8 @@ public class MainActivity extends AppCompatActivity {
         menuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_DENIED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.CAMERA}, CAMERA_IMAGE_RESULT);
-                }
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, CAMERA_IMAGE_RESULT);
-                }
-                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_DENIED) {
-                    ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, CAMERA_IMAGE_RESULT);
-                } else {
-                    File file = null;
+                if (checkPermissions()) {
+                    File file;
                     try {
                         file = createImageFile();
                         mUri = FileProvider.getUriForFile(MainActivity.this, CAPTURE_IMAGE_FILE_PROVIDER, file);
@@ -122,19 +142,31 @@ public class MainActivity extends AppCompatActivity {
             if (mUri != null) {
                 userLocationInfo();
                 Photo photo = new Photo(timeStamp, country, city, mUri.toString(), lat, lng);
-                photoViewModel.createPhoto(photo);
+                mainViewModel.createPhoto(photo);
             }
         }
     }
 
     private File createImageFile() throws IOException {
-        timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
+        timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "photomemory_" + timeStamp + ".jpeg";
         File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "Photo Memory");
-        if (!mediaStorageDir.exists()) {
-            mediaStorageDir.mkdirs();
+        return new File(mediaStorageDir, imageFileName);
+    }
+
+    private boolean checkPermissions() {
+        int result;
+        List<String> listPermissionsNeeded = new ArrayList<>();
+        for (String p : permissions) {
+            result = ContextCompat.checkSelfPermission(MainActivity.this, p);
+            if (result != PackageManager.PERMISSION_GRANTED) {
+                listPermissionsNeeded.add(p);
+            }
         }
-        File image = new File(mediaStorageDir, imageFileName);
-        return image;
+        if (!listPermissionsNeeded.isEmpty()) {
+            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), MULTIPLE_PERMISSIONS);
+            return false;
+        }
+        return true;
     }
 }

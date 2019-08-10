@@ -10,24 +10,20 @@ import androidx.lifecycle.ViewModelProviders;
 
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.Toast;
 
 import com.example.photomemory.R;
 import com.example.photomemory.data.Photo;
-import com.example.photomemory.viewmodels.PhotoViewModel;
+import com.example.photomemory.viewmodels.MainViewModel;
 
 import java.util.List;
 
 
 public class GalleryFragment extends Fragment {
 
-    private PhotoViewModel photoViewModel;
+    private MainViewModel mainViewModel;
 
     private List<Photo> photoList;
 
@@ -41,8 +37,8 @@ public class GalleryFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
 
-        photoViewModel = ViewModelProviders.of(this).get(PhotoViewModel.class);
-        photoViewModel.getListOfPhotos().observe(this, new Observer<List<Photo>>() {
+        mainViewModel = ViewModelProviders.of(this).get(MainViewModel.class);
+        mainViewModel.getListOfPhotos().observe(this, new Observer<List<Photo>>() {
             @Override
             public void onChanged(List<Photo> photos) {
                 for(Photo p : photos){
