@@ -14,7 +14,6 @@ import androidx.lifecycle.ViewModelProviders;
 import com.example.photomemory.R;
 import com.example.photomemory.data.CustomMarker;
 import com.example.photomemory.data.Photo;
-import com.example.photomemory.ui.MapFragment;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -22,11 +21,7 @@ import com.google.maps.android.clustering.Cluster;
 import com.google.maps.android.clustering.ClusterManager;
 import com.google.maps.android.clustering.view.DefaultClusterRenderer;
 import com.google.maps.android.ui.IconGenerator;
-import com.example.photomemory.viewmodels.MapViewModel;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ClusterRender extends DefaultClusterRenderer<CustomMarker> {

@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModelProviders;
 import androidx.viewpager.widget.ViewPager;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -71,11 +72,9 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    @SuppressLint("MissingPermission")
     private void userLocationInfo() {
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, Constants.LOCATION_PERMISSION);
-        } else {
-
+        if (checkPermissions()){
             fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
                 @Override
                 public void onSuccess(Location location) {
@@ -106,13 +105,11 @@ public class MainActivity extends AppCompatActivity {
                     try {
                         file = createImageFile();
                         mUri = FileProvider.getUriForFile(MainActivity.this, Constants.CAPTURE_IMAGE_FILE_PROVIDER, file);
-
-                        Log.d("uri", mUri.toString());
                         Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                         cameraIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
                         startActivityForResult(cameraIntent, Constants.CAMERA_IMAGE_RESULT);
-                    } catch (IOException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
                 }
@@ -132,7 +129,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private File createImageFile() throws IOException {
+    private File createImageFile() {
         timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
         String imageFileName = "photomemory_" + timeStamp + ".jpeg";
         File mediaStorageDir = new File(Environment.getExternalStorageDirectory(), "Photo Memory");

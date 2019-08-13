@@ -13,7 +13,7 @@ import java.util.List;
 
 public class MapViewModel extends AndroidViewModel {
 
-    public PhotoRepository photoRepository;
+    private PhotoRepository photoRepository;
     private LiveData<List<Photo>> allPhotos;
 
     public MapViewModel(@NonNull Application application) {

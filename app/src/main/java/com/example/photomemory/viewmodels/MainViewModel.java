@@ -18,7 +18,7 @@ import java.util.Locale;
 
 public class MainViewModel extends AndroidViewModel {
 
-    public PhotoRepository photoRepository;
+    private PhotoRepository photoRepository;
     private LiveData<List<Photo>> allPhotos;
 
     public MainViewModel(@NonNull Application application) {
