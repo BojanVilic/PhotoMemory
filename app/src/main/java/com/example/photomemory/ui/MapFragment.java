@@ -104,6 +104,7 @@ public class MapFragment extends Fragment {
                 CustomMarker customMarker = new CustomMarker(position(p.getLatitude(), p.getLongitude()), p.getUri());
                 mClusterManager.addItem(customMarker);
                 mClusterMarkers.add(customMarker);
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(p.getLatitude(), p.getLongitude()), 8));
             }
         }
         mClusterManager.cluster();

@@ -26,7 +26,11 @@ import android.view.MenuItem;
 import com.example.photomemory.R;
 import com.example.photomemory.adapters.ViewPagerAdapter;
 import com.example.photomemory.data.Photo;
+import com.example.photomemory.utils.Constants;
 import com.example.photomemory.viewmodels.MainViewModel;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
@@ -40,8 +44,6 @@ import java.util.Locale;
 public class MainActivity extends AppCompatActivity {
 
     private Uri mUri;
-    private static final int CAMERA_IMAGE_RESULT = 3;
-    private static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.photomemory";
     private ViewPager viewPager;
     private MainViewModel mainViewModel;
     private String country;
@@ -49,13 +51,8 @@ public class MainActivity extends AppCompatActivity {
     private String timeStamp;
     private double lat;
     private double lng;
-    public static final int MULTIPLE_PERMISSIONS = 1;
-    public static final int LOCATION_PERMISSION = 2;
-    String[] permissions = new String[]{
-            Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.CAMERA,
-            Manifest.permission.ACCESS_FINE_LOCATION};
+    private FusedLocationProviderClient fusedLocationProviderClient;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,41 +66,31 @@ public class MainActivity extends AppCompatActivity {
 
         TabLayout tabLayout = findViewById(R.id.tabs);
         tabLayout.setupWithViewPager(viewPager);
+
+        fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
     }
 
     private void userLocationInfo() {
         if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_DENIED) {
-            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION);
+            ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, Constants.LOCATION_PERMISSION);
         } else {
-            LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-            if (lm != null) {
-                lm.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, new LocationListener() {
-                    @Override
-                    public void onLocationChanged(Location location) {
+            fusedLocationProviderClient.getLastLocation().addOnSuccessListener(new OnSuccessListener<Location>() {
+                @Override
+                public void onSuccess(Location location) {
+                    if(location != null){
                         lat = location.getLatitude();
                         lng = location.getLongitude();
 
                         country = mainViewModel.getCountry(lat, lng);
                         city = mainViewModel.getCity(lat, lng);
+
+                        Photo photo = new Photo(timeStamp, country, city, mUri.toString(), lat, lng);
+                        mainViewModel.createPhoto(photo);
                     }
-
-                    @Override
-                    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-                    }
-
-                    @Override
-                    public void onProviderEnabled(String s) {
-
-                    }
-
-                    @Override
-                    public void onProviderDisabled(String s) {
-
-                    }
-                });
-            }
+                }
+            });
         }
     }
 
@@ -118,13 +105,13 @@ public class MainActivity extends AppCompatActivity {
                     File file;
                     try {
                         file = createImageFile();
-                        mUri = FileProvider.getUriForFile(MainActivity.this, CAPTURE_IMAGE_FILE_PROVIDER, file);
+                        mUri = FileProvider.getUriForFile(MainActivity.this, Constants.CAPTURE_IMAGE_FILE_PROVIDER, file);
 
                         Log.d("uri", mUri.toString());
                         Intent cameraIntent = new Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE);
                         cameraIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, mUri);
-                        startActivityForResult(cameraIntent, CAMERA_IMAGE_RESULT);
+                        startActivityForResult(cameraIntent, Constants.CAMERA_IMAGE_RESULT);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -138,11 +125,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == CAMERA_IMAGE_RESULT && resultCode == RESULT_OK) {
+        if (requestCode == Constants.CAMERA_IMAGE_RESULT && resultCode == RESULT_OK) {
             if (mUri != null) {
                 userLocationInfo();
-                Photo photo = new Photo(timeStamp, country, city, mUri.toString(), lat, lng);
-                mainViewModel.createPhoto(photo);
             }
         }
     }
@@ -157,14 +142,14 @@ public class MainActivity extends AppCompatActivity {
     private boolean checkPermissions() {
         int result;
         List<String> listPermissionsNeeded = new ArrayList<>();
-        for (String p : permissions) {
+        for (String p : Constants.permissions) {
             result = ContextCompat.checkSelfPermission(MainActivity.this, p);
             if (result != PackageManager.PERMISSION_GRANTED) {
                 listPermissionsNeeded.add(p);
             }
         }
         if (!listPermissionsNeeded.isEmpty()) {
-            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), MULTIPLE_PERMISSIONS);
+            ActivityCompat.requestPermissions(this, listPermissionsNeeded.toArray(new String[listPermissionsNeeded.size()]), Constants.MULTIPLE_PERMISSIONS);
             return false;
         }
         return true;
