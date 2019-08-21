@@ -5,7 +5,6 @@ import android.Manifest;
 public class Constants {
 
     public static final int MULTIPLE_PERMISSIONS = 1;
-    public static final int LOCATION_PERMISSION = 2;
     public static final int CAMERA_IMAGE_RESULT = 3;
     public static final String CAPTURE_IMAGE_FILE_PROVIDER = "com.example.photomemory";
     public static String[] permissions = new String[]{

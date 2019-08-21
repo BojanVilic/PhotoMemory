@@ -4,12 +4,9 @@ package com.example.photomemory.ui;
 import android.os.Bundle;
 
 import androidx.fragment.app.Fragment;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProviders;
 
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,15 +21,11 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.maps.android.clustering.ClusterManager;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 
 public class MapFragment extends Fragment {
@@ -41,7 +34,6 @@ public class MapFragment extends Fragment {
     MapView mMapView;
     private ClusterManager<CustomMarker> mClusterManager;
     private ClusterRender mClusterManagerRenderer;
-    private ArrayList<CustomMarker> mClusterMarkers = new ArrayList<>();
     private MapViewModel mapViewModel;
     private List<Photo> photoList = new ArrayList<>();
 
@@ -60,9 +52,6 @@ public class MapFragment extends Fragment {
         mapViewModel.getListOfPhotos().observe(this, new Observer<List<Photo>>() {
             @Override
             public void onChanged(List<Photo> photos) {
-                for (Photo p : photos) {
-                    Log.d("MILKA", p.getUri());
-                }
                 photoList.addAll(photos);
                 addMapMarkers();
             }
@@ -86,7 +75,6 @@ public class MapFragment extends Fragment {
     }
 
     private void addMapMarkers() {
-
         if (googleMap != null) {
 
             if (mClusterManager == null) {
@@ -100,11 +88,12 @@ public class MapFragment extends Fragment {
                 );
                 mClusterManager.setRenderer(mClusterManagerRenderer);
             }
-            for(Photo p : photoList){
+            for (Photo p : photoList) {
                 CustomMarker customMarker = new CustomMarker(position(p.getLatitude(), p.getLongitude()), p.getUri());
                 mClusterManager.addItem(customMarker);
-                mClusterMarkers.add(customMarker);
-                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(p.getLatitude(), p.getLongitude()), 8));
+            }
+            if (photoList.size() > 0) {
+                googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(photoList.get(photoList.size() - 1).getLatitude(), photoList.get(photoList.size() - 1).getLongitude()), 8));
             }
         }
         mClusterManager.cluster();
